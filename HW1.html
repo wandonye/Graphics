@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+	<br/>
+	<input id="slider" type="range" min="80" max="320" />
+</body>
+<script> "use strict"
+  function setup() {
+    var r = 30;
+    var g = 9.8;
+    var v_y = 0;
+    var v_x = 0;
+    var sphere_x = 200;
+    var sphere_y = 50;
+		var canvas = document.getElementById('myCanvas');
+		var slider = document.getElementById('slider');
+    var context = canvas.getContext('2d');
+    slider.value = 200;
+    var seesawAngle = 0; //range 0.16
+    var angleSpeed = 0;
+    function draw() {
+      //context.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = canvas.width;
+      // use the slider to get the position
+      var x = parseFloat(slider.value,10);
+      //draws ground
+      context.beginPath();
+      context.moveTo(0,380);
+      context.lineTo(400,380);
+      context.lineWidth=1;
+      context.strokeStyle="#D3D3D3";
+      context.stroke();
+      drawSeesaw(x,350,seesawAngle);
+      drawSphere(sphere_x,sphere_y);
+      if (sphere_y>=(380-r)) {
+        //on the ground, then roll away
+        sphere_x = sphere_x + v_x;
+        seesawAngle = seesawAngle + angleSpeed;
+      }else if (is_touch(sphere_x,sphere_y)){
+        //if touch the seesaw, then bounce
+        if (sphere_x==x) {
+            angleSpeed = Math.random() < 0.5 ? -0.002:0.002;
+        }else {
+            angleSpeed = v_y*0.000005*(sphere_x-x);
+        }
+        seesawAngle = seesawAngle + angleSpeed;
+        var v_nor = -0.8*(-v_x*Math.sin(seesawAngle)+v_y*Math.cos(seesawAngle));
+        var v_par = v_x*Math.cos(seesawAngle)+v_y*Math.sin(seesawAngle);
+        v_y = v_par*Math.sin(seesawAngle)+v_nor*Math.cos(seesawAngle);
+        v_x = v_par*Math.cos(seesawAngle)-v_nor*Math.sin(seesawAngle);
+
+        v_x = v_x + g*0.01*Math.cos(seesawAngle)*Math.sign(seesawAngle);
+        v_y = v_y + g*0.01*Math.sin(Math.abs(seesawAngle));
+        sphere_x = sphere_x + v_x;
+        sphere_y = sphere_y + v_y;
+      }else {
+        v_y = (v_y + g*0.02);
+        seesawAngle = seesawAngle + angleSpeed;
+        sphere_y = (sphere_y + v_y);
+        sphere_x = (sphere_x + v_x);
+      }
+
+      if (seesawAngle<-0.16 || seesawAngle>0.16) {
+          angleSpeed = 0;
+      }
+
+      if (sphere_x>450||sphere_x<-50) {
+          sphere_x = 200;
+          sphere_y = 50;
+          v_y = 0;
+          v_x = 0;
+          seesawAngle = 0;
+          angleSpeed = 0;
+      }
+      window.requestAnimationFrame(draw);
+	  };
+    function drawSeesaw(x, y, angle) {
+      //draw a line
+      context.beginPath();
+      context.moveTo(x-150*Math.cos(angle),y- 150*Math.sin(angle));
+      context.lineTo(x+150*Math.cos(angle),y+ 150*Math.sin(angle));
+      context.lineWidth=12;
+      context.strokeStyle="#C0C0C0";
+      context.stroke();
+      //draw support
+      context.beginPath();
+      context.moveTo(x,y);
+      context.lineTo(x-20,y+30);
+      context.lineTo(x+20,y+30);
+      context.lineTo(x,y);
+      context.lineWidth=1;
+      context.stroke();
+      context.fillStyle="#C0C0C0";
+      context.fill();
+      //draw joint
+      context.beginPath();
+      context.arc(x,y,4,0,2*Math.PI);
+      context.lineWidth=1;
+      context.strokeStyle="#808080";
+      context.stroke();
+    };
+    function drawSphere(x,y) {
+      //draws a sphere
+      context.beginPath();
+      context.arc(x,y,r,0,2*Math.PI);
+      context.fillStyle="#000000";
+      context.fill();
+    };
+    function is_touch(sphere_x,sphere_y) {
+      //x,y center of sphere
+      var dx = sphere_x-slider.value;
+      var dy = sphere_y-350;
+      var d = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2))
+      var alpha = Math.atan2(dy,dx);
+      var beta = alpha - seesawAngle;
+      var distance = d*Math.sin(Math.abs(beta))-10.4;
+      if (distance<=r&&dx<150&&dx>-150){ //lazy approximation
+        return true;
+      }
+      return false;
+    };
+    window.requestAnimationFrame(draw);
+  };
+	window.onload = setup;
+</script>
+<head>
+  <meta name="description" content="Ball on seesaw">
+  <meta charset="utf-8">
+  <title>Ball Falls on a Seesaw</title>
+</head>
+</html>
