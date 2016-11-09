@@ -1,0 +1,68 @@
+<html>
+<script src="numeric-solve.min.js"></script>
+<script src="twgl-full.min.js"></script>
+<script src="Point.js"></script>
+<script src="gNode.js"></script>
+<script src="Polygon.js"></script>
+<script src="Box.js"></script>
+<script src="Robot.js"></script>
+<script src="Shader.js"></script>
+<script src="HW6.js"></script>
+<head>
+    <meta name="description" content="3D to 2D">
+    <meta charset="utf-8">
+    <title>Simple Color HW6</title>
+
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style>
+<script id="vs" type="not-js">
+  attribute vec3 position;
+  attribute vec3 color;
+  attribute vec3 normal;
+
+  uniform mat4 normalMatrix;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform mat4 uMVP;
+
+  varying vec3 fColor;
+  varying vec3 fNormal;
+
+  void main(void) {
+    fNormal = normal;
+    gl_Position = projectionMatrix*modelViewMatrix* vec4(position, 1.0);
+    fColor = color;
+  }
+</script>
+
+<script id="fs" type="not-js">
+  precision highp float;
+  varying vec3 fColor;
+  varying vec3 fNormal;
+
+  void main(void) {
+    vec3 lightSrc = vec3(100,100.0,100);//light1 direction
+    vec3 reflection = reflect(-lightSrc, fNormal);
+    gl_FragColor = vec4(fColor/2.0, 1.0);
+  }
+</script>
+</head>
+
+
+<body>
+    <canvas id="myCanvas" width="400" height="400" style="border:1px solid #000"></canvas><br>
+    <input id="slider1" type="range" min="1" max="20">Speed<br>
+</body>
+</html>

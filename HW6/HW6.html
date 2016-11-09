@@ -1,0 +1,143 @@
+<html>
+<script src="numeric-solve.min.js"></script>
+<script src="twgl-full.min.js"></script>
+<script src="Point.js"></script>
+<script src="gNode.js"></script>
+<script src="Polygon.js"></script>
+<script src="Box.js"></script>
+<script src="Robot.js"></script>
+<script src="Shader.js"></script>
+<script src="HW6.js"></script>
+<head>
+    <meta name="description" content="3D to 2D">
+    <meta charset="utf-8">
+    <title>HW6</title>
+
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style>
+<script id="vs" type="not-js">
+  precision highp float;
+  attribute vec3 position;
+  attribute vec3 color;
+  attribute vec3 normal;
+  uniform mat4 normalMatrix;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform float time;
+
+  varying vec3 fNormal;
+  varying vec3 modelP;
+  varying vec3 modelN;
+  varying vec3 rawP;
+  varying vec3 fPosition;
+  varying vec3 specColor;
+  const float frequence = 10.0;
+  varying float juliaIntensity;
+
+  void main()
+  {
+    specColor = color;
+    rawP=position;
+    juliaIntensity = (1.0 + 0.5*cos(time * frequence));
+    modelP = position;
+    fNormal = normal;
+    fNormal = normalize(mat3(normalMatrix)*normal);
+    vec4 pos = modelViewMatrix * vec4(modelP, 1.0);
+    fPosition = pos.xyz/pos.w;
+    gl_Position = projectionMatrix * pos;
+  }
+</script>
+
+<script id="fs" type="not-js">
+  precision highp float;
+  varying vec3 fNormal;
+  varying vec3 rawP;
+  varying vec3 fPosition;
+  varying vec3 specColor;
+  const float frequence = 1.0;
+  //for julia set
+  const int iter = 50;
+  const vec2 c = vec2(0,0.8);
+  varying float juliaIntensity;
+  //for wood texture
+  const vec3 LightWood = vec3(0.6, 0.3, 0.1);
+  const	vec3 DarkWood = vec3(0.4, 0.2, 0.07);
+
+  vec3 camera = vec3(0, 0, 5);
+
+  void main()
+  {
+    vec3 ambientColor = vec3(1,1,1);//ambient light color
+    vec3 lightSrc = vec3(0,1,10);//light1 position
+    vec3 ligtvec = fPosition-lightSrc;
+    vec3 lightColor = vec3(0.3,0.3,0.3);//light1 color
+
+    vec3 objColor;
+
+    float radius = sqrt(rawP.x * rawP.x + 2.0*rawP.z * rawP.z)/150.0;
+    float rf = fract(radius*20.0)*2.0;
+    if (rf > 1.0) {
+    	rf = 2.0 - rf;
+  	}
+    vec3 woodColor = mix(LightWood, DarkWood, rf);
+    float diff_intensity = dot(fNormal,normalize(-ligtvec));
+    vec3 reflection = normalize(reflect(ligtvec, fNormal));
+    float spec_intensity = 0.4*pow(max(dot(reflection, normalize(camera-fPosition)), 0.0), 20.0);
+
+    objColor = 0.1*ambientColor + diff_intensity*woodColor+spec_intensity*lightColor;
+
+    //generate julia set
+    int j1=0;
+    int j2=0;
+    vec2 z = vec2(rawP.x/250.0,rawP.y/250.0+0.1);
+
+    for (int i=0; i<iter; i++) {
+      j1 = i;
+      float x = (z.x * z.x - z.y * z.y) + c.x;
+      float y = (z.y * z.x + z.x * z.y) + c.y;
+
+      if((x * x + y * y) > 10.0) break;
+      z.x = x;
+      z.y = y;
+    }
+
+    z = vec2(rawP.y/250.0,rawP.z/100.0-0.5);
+
+    for (int i=0; i<iter; i++) {
+      j2 = i;
+      float x = (z.x * z.x - z.y * z.y) + c.x;
+      float y = (z.y * z.x + z.x * z.y) + c.y;
+
+      if((x * x + y * y) > 10.0) break;
+      z.x = x;
+      z.y = y;
+    }
+    vec3 juliaColor = vec3(0,0,0);
+    if (j1+1==iter||j2+1==iter) {
+      juliaColor =  4.0*spec_intensity*specColor;
+    }
+
+  	//gl_FragColor = vec4(objColor,1.0);
+
+    gl_FragColor = vec4(objColor + juliaColor,1.0);
+  }
+</script>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="400" height="400" style="border:1px solid #000"></canvas><br>
+    <input id="slider1" type="range" min="1" max="20">Speed<br>
+</body>
+</html>

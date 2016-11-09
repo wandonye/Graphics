@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)http://graphics.cs.wisc.edu/Courses/559-f2015/Examples/Painters/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Simplest Program 4</title>
+    <title></title>
+</head>
+<body>
+<h1>Simple P4 Demo</h1>
+<!-- the arcball doesn't work correctly, so don't advertise it
+    <p>Left Mouse button in the window will give you an ArcBall to move the camera.</p>
+-->
+<p>This is meant to show you what a simple version of the program should look like - it's not meant for you to look at my code
+(you should do better!).</p>
+<p>Each square's triangles are subtly different colors (so you can see how the cube is triangulated).</p>
+<p>Notice how the painter's algorithm messes up sometimes
+    (since this is not splitting triangles - it simply uses the average of the triangle's Z coordinates).</p>
+<canvas id="myCanvas" width="400" height="400" style="border:1px solid #000;"></canvas><br>
+    <input type="checkbox" id="cb">WireFrame<br>
+    <input type="checkbox" id="ns">No Sort<br>
+
+<script src="./Simplest Program 4_files/twgl-full.min.js"></script>
+<script src="./Simplest Program 4_files/arcball.js"></script>
+<script src="./Simplest Program 4_files/painters.js"></script>
+<script src="./Simplest Program 4_files/p4simple.js"></script><span style="display: inline-block; width: 80px;">speed</span><input id="speed" type="range" width="300" min="0" max="5"><br><span style="display: inline-block; width: 80px;">fov</span><input id="fov" type="range" width="300" min="10" max="90"><br><span style="display: inline-block; width: 80px;">lookAtX</span><input id="lookAtX" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">lookAtY</span><input id="lookAtY" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">lookAtZ</span><input id="lookAtZ" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">lookFromX</span><input id="lookFromX" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">lookFromY</span><input id="lookFromY" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">lookFromZ</span><input id="lookFromZ" type="range" width="300" min="-10" max="10"><br><span style="display: inline-block; width: 80px;">perspective</span><input id="perspective" type="range" width="300" min="0" max="1"><br>
+
+</body></html>
