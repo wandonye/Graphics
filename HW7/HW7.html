@@ -1,0 +1,232 @@
+<html>
+<script src="Libraries/twgl-full.js"></script>
+<script src="Libraries/panel.js"></script>
+<script src="Libraries/arcball.js"></script>
+<script src="assets/pedestal.js"></script>
+<script src="Point.js"></script>
+<script src="AbstractNode.js"></script>
+<script src="OBJNode.js"></script>
+<script src="Polygon.js"></script>
+<script src="Box.js"></script>
+<script src="Robot.js"></script>
+<script src="Shader.js"></script>
+<script src="Scene.js"></script>
+<script src="Simplex.js"></script>
+<script src="Tree.js"></script>
+<script src="Root.js"></script>
+<script src="HW7.js"></script>
+<head>
+    <meta name="description" content="GraphicTown">
+    <meta charset="utf-8">
+    <title>HW7</title>
+
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style>
+<!-- solid color -->
+<script id="solid_vs" type="notjs">
+// specialized shader for the simple cube
+// we assume that the model matrix works as the normal
+//      matrix - this only is try if the model matrix
+//      it a rotate/translate
+//      (uniform scale is OK since we re-normalize)
+// color is solid
+// simple lighting
+    precision highp float;
+    attribute vec3 position;
+    attribute vec3 color;
+    attribute vec3 normal;
+    uniform mat4 normalMatrix;
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+    uniform float time;
+    uniform vec3 lightSrc;//light1 position camPos
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    varying vec3 outColor;
+
+    void main(void) {
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 vnormal = normalize(normalMatrix * vec4(normal,0.0));
+        float diffuse = .5 + .5*abs(dot(vnormal, vec4(lightSrc,0.0)));
+        outColor = color * diffuse;
+    }
+</script>
+<script id="solid_fs" type="notjs">
+// simple shader that does vertex coloring
+//  (e.g. the vertex shader figures the lighting
+// note this is used for more than just the cube
+
+    precision highp float;
+    uniform vec3 lightSrc;//light1 position camPos
+    uniform vec3 camera;//camera position
+
+    varying vec3 outColor;
+    void main(void) {
+        gl_FragColor = vec4(outColor, 1.0);
+    }
+</script>
+
+<!-- ground -->
+<script id="ground_vs" type="not-js">
+    precision highp float;
+    attribute vec3 position;
+    attribute vec3 color;
+    attribute vec3 normal;
+    uniform mat4 normalMatrix;
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+    uniform float time;
+
+    varying vec3 outPos;
+    varying vec3 vcolor;
+    varying vec3 vnormal;
+
+    void main(void) {
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        outPos = position;
+        vcolor = color;
+        vnormal = normal;
+    }
+</script>
+<script id="ground_fs" type="not-js">
+    // note this is used for more than just the cube
+    precision highp float;
+    uniform vec3 lightSrc;//light1 position camPos
+    uniform vec3 camera;//camera position
+
+    varying vec3 outPos;
+    void main(void) {
+        float xs = step(10.0,mod(outPos.x,30.0));
+        float zs = step(10.0,mod(outPos.z,30.0));
+        float ss = (xs>.5) ? zs : 1.0-zs;
+        gl_FragColor = mix(vec4(0.5,0.5,0.5,1),
+                           vec4(0.3,0.2,0.1,1),
+                           ss
+                           );
+    }
+</script>
+<!-- wood -->
+<script id="wood_vs" type="not-js">
+  precision highp float;
+  attribute vec3 position;
+  attribute vec3 color;
+  attribute vec3 normal;
+  uniform mat4 normalMatrix;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform float time;
+
+  varying vec3 fNormal;
+  varying vec3 modelP;
+  varying vec3 modelN;
+  varying vec3 rawP;
+  varying vec3 fPosition;
+  varying vec3 specColor;
+  const float frequence = 10.0;
+  varying float juliaIntensity;
+
+  void main()
+  {
+    specColor = color;
+    rawP=position;
+    juliaIntensity = 1.0;
+    modelP = position;
+    fNormal = normal;
+    fNormal = normalize(mat3(normalMatrix)*normal);
+    vec4 pos = modelViewMatrix * vec4(modelP, 1.0);
+    fPosition = pos.xyz/pos.w;
+    gl_Position = projectionMatrix * pos;
+  }
+</script>
+
+<script id="wood_fs" type="not-js">
+  precision highp float;
+  uniform vec3 lightSrc;//light1 position camPos
+  uniform vec3 camera;//camera position
+
+  varying vec3 fNormal;
+  varying vec3 rawP;
+  varying vec3 fPosition;
+  varying vec3 specColor;
+  const float frequence = 1.0;
+  //for julia set
+  const int iter = 50;
+  const vec2 c = vec2(0,0.8);
+  varying float juliaIntensity;
+  //for wood texture
+  const vec3 LightWood = vec3(0.6, 0.3, 0.1);
+  const	vec3 DarkWood = vec3(0.4, 0.2, 0.07);
+
+  void main()
+  {
+    float ambient = 0.3;//ambient light color
+    vec3 ligtvec = lightSrc;
+    vec3 lightColor = vec3(0.3,0.3,0.3);//light1 color
+
+    vec3 objColor;
+
+    float radius = sqrt(rawP.x * rawP.x + 2.0*rawP.z * rawP.z)/150.0;
+    float rf = fract(radius*50.0)*2.0;
+    if (rf > 1.0) {
+    	rf = 2.0 - rf;
+  	}
+    vec3 woodColor = mix(LightWood, DarkWood, rf);
+    float diff_intensity = dot(fNormal,normalize(-ligtvec))+0.5;
+    vec3 reflection = normalize(reflect(ligtvec, fNormal));
+    float spec_intensity = 4.0*pow(max(dot(reflection, normalize(-fPosition)), 0.0), 600.0);
+
+    objColor = ambient*woodColor+ diff_intensity*woodColor+spec_intensity*lightColor;
+
+    //generate julia set
+    int j1=0;
+    int j2=0;
+    vec2 z = vec2(rawP.x/250.0,rawP.y/250.0+0.1);
+
+    for (int i=0; i<iter; i++) {
+      j1 = i;
+      float x = (z.x * z.x - z.y * z.y) + c.x;
+      float y = (z.y * z.x + z.x * z.y) + c.y;
+
+      if((x * x + y * y) > 10.0) break;
+      z.x = x;
+      z.y = y;
+    }
+
+    z = vec2(rawP.y/250.0,rawP.z/100.0-0.5);
+
+    for (int i=0; i<iter; i++) {
+      j2 = i;
+      float x = (z.x * z.x - z.y * z.y) + c.x;
+      float y = (z.y * z.x + z.x * z.y) + c.y;
+
+      if((x * x + y * y) > 10.0) break;
+      z.x = x;
+      z.y = y;
+    }
+    vec3 juliaColor = vec3(0,0,0);
+    if (j1+1==iter||j2+1==iter) {
+      juliaColor =  4.0*spec_intensity*specColor;
+    }
+
+    gl_FragColor = vec4(objColor + juliaColor,1.0);
+  }
+</script>
+</head>
+
+<body>
+
+</body>
+</html>
